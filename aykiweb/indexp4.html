@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo das Cartas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+
+        .game-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            width: 80vw; /* Ajusta a largura para a largura da tela */
+            max-width: 500px; /* Limita a largura máxima */
+            max-height: 100vh; /* Limita a altura máxima */
+            overflow: auto; /* Permite rolar se necessário */
+            justify-content: center; /* Centraliza o conteúdo */
+        }
+
+        .card {
+            width: 60px;
+            height: 90px;
+            background-color: #ffffff;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-size: cover;
+            background-position: center;
+            cursor: pointer;
+            user-select: none;
+            max-width: calc(100% / 3 - 10px); /* Ajusta o tamanho da carta */
+            max-height: 150px; /* Ajusta a altura máxima da carta */
+        }
+
+        .card.dragging {
+            opacity: 0.5;
+        }
+
+        #message {
+            margin-top: 20px;
+            font-size: 18px;
+            text-align: center;
+        }
+    </style>
+    <!-- Incluindo Interact.js -->
+    <script src="https://cdn.jsdelivr.net/npm/interactjs@latest/dist/interact.min.js"></script>
+</head>
+<body>
+    <div class="game-container">
+        <div class="card" data-value="183" style="background-image: url('double.jpg');"></div>
+        <div class="card" data-value="64" style="background-image: url('water.jpg');"></div>
+        <div class="card" data-value="180" style="background-image: url('psychic.jpg');"></div>
+        <div class="card" data-value="112" style="background-image: url('metal.jpg');"></div>
+        <div class="card" data-value="21" style="background-image: url('fighting.jpg');"></div>
+        <div class="card" data-value="136" style="background-image: url('grass.jpg');"></div>
+    </div>
+    <div id="message"></div>
+
+    <script>
+        interact('.card')
+            .draggable({
+                listeners: {
+                    start (event) {
+                        event.target.classList.add('dragging');
+                    },
+                    move (event) {
+                        const target = event.target;
+                        const x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
+                        const y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
+
+                        target.style.transform = `translate(${x}px, ${y}px)`;
+                        target.setAttribute('data-x', x);
+                        target.setAttribute('data-y', y);
+                    },
+                    end (event) {
+                        event.target.classList.remove('dragging');
+                        event.target.style.transform = 'none';
+                        event.target.removeAttribute('data-x');
+                        event.target.removeAttribute('data-y');
+                        checkOrder();
+                    }
+                },
+                modifiers: [
+                    interact.modifiers.restrictRect({
+                        restriction: 'parent',
+                        endOnly: true
+                    })
+                ],
+                inertia: true
+            });
+
+        interact('.game-container').dropzone({
+            accept: '.card',
+            overlap: 0.5,
+            ondrop: function(event) {
+                const draggedCard = document.querySelector('.dragging');
+                const dropzone = event.target;
+                dropzone.appendChild(draggedCard);
+                draggedCard.style.transform = 'none';
+                draggedCard.removeAttribute('data-x');
+                draggedCard.removeAttribute('data-y');
+                checkOrder();
+            }
+        });
+
+        function checkOrder() {
+            const container = document.querySelector('.game-container');
+            const cardValues = [...container.children].map(card => parseInt(card.dataset.value));
+            const sortedValues = [...cardValues].sort((a, b) => a - b);
+            const message = document.getElementById('message');
+            
+            if (JSON.stringify(cardValues) === JSON.stringify(sortedValues)) {
+                message.textContent = 'Parabéns! Você organizou as cartas corretamente!';
+                setTimeout(() => {
+                    window.location.href = 'indexp5.html';
+                }, 2000); // Redireciona após 2 segundos
+            } else {
+                message.textContent = '';
+            }
+        }
+    </script>
+</body>
+</html>

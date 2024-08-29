@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aykikard</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            background-color: #ffbf65;
+        }
+
+        canvas {
+            background-color: #ffffff;
+            border: 2px solid #525252;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const canvas = document.getElementById("gameCanvas");
+            const ctx = canvas.getContext("2d");
+
+            const canvasWidth = Math.min(window.innerWidth, 800);
+            const canvasHeight = Math.min(window.innerHeight, 600);
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+
+            const birdImage = new Image();
+            birdImage.src = 'bird.png';
+
+            let player = { x: 50, y: canvas.height / 2, width: 50, height: 50, speedY: 0 };
+            let gravity = 0.6;
+            let obstacles = [];
+            let score = 0;
+            let obstacleSpeed = 3;
+            let obstacleSpawnInterval = 0.02;
+            let largeObstacleProbability = 0.7;
+
+            function drawPlayer() {
+                ctx.drawImage(birdImage, player.x, player.y, player.width, player.height);
+            }
+
+            function drawObstacle(obstacle) {
+                ctx.fillStyle = "#ffbf65";
+                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+            }
+
+            function movePlayer() {
+                player.y += player.speedY;
+                player.speedY += gravity;
+
+                if (player.y + player.height > canvas.height) {
+                    player.y = canvas.height - player.height;
+                    player.speedY = 0;
+                } else if (player.y < 0) {
+                    player.y = 0;
+                    player.speedY = 0;
+                }
+            }
+
+            function generateObstacle() {
+                let obstacleHeight = Math.random() * 90 + 50;
+                let topObstacleHeight = Math.random() * 45 + 45;
+                let width = 50;
+                
+             
+                if (Math.random() < largeObstacleProbability) {
+                    obstacleHeight *= 2;
+                    topObstacleHeight *= 1.5;
+                }
+
+                obstacles.push({ x: canvas.width, y: canvas.height - obstacleHeight, width, height: obstacleHeight, top: false });
+                
+                if (Math.random() < 0.6) {
+                    obstacles.push({ x: canvas.width, y: 0, width, height: topObstacleHeight, top: true });
+                }
+            }
+
+            function moveObstacles() {
+                for (let i = obstacles.length - 1; i >= 0; i--) {
+                    obstacles[i].x -= obstacleSpeed;
+
+                    if (obstacles[i].x + obstacles[i].width < 0) {
+                        if (!obstacles[i].top) score++;
+                        obstacles.splice(i, 1);
+                    }
+                }
+
+                // Aumenta a velocidade conforme o score aumenta
+                if (score >= 10 && score < 30) {
+                    obstacleSpeed = 7;
+                } else if (score >= 30 && score < 50) {
+                    obstacleSpeed = 9;
+                } else if (score >= 50) {
+                    obstacleSpeed = 10;
+                }
+            }
+
+            function checkCollision() {
+                for (let i = 0; i < obstacles.length; i++) {
+                    if (
+                        player.x < obstacles[i].x + obstacles[i].width &&
+                        player.x + player.width > obstacles[i].x &&
+                        player.y < obstacles[i].y + obstacles[i].height &&
+                        player.y + player.height > obstacles[i].y
+                    ) {
+                        resetGame();
+                    }
+                }
+            }
+
+            function resetGame() {
+                player = { x: 50, y: canvas.height / 2, width: 50, height: 50, speedY: 0 };
+                obstacles = [];
+                score = 0;
+                obstacleSpeed = 3;
+            }
+
+            function gameLoop() {
+                movePlayer();
+                moveObstacles();
+                checkCollision();
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                drawPlayer();
+
+                for (let i = 0; i < obstacles.length; i++) {
+                    drawObstacle(obstacles[i]);
+                }
+
+                if (Math.random() < obstacleSpawnInterval) {
+                    generateObstacle();
+                }
+
+                ctx.font = "20px Arial";
+                ctx.fillStyle = "#000000";
+                ctx.fillText("Score: " + score, canvas.width - 100, 30);
+
+                if (score >= 100) {
+                    window.location.href = "indexfinal.html"; 
+                } else {
+                    requestAnimationFrame(gameLoop);
+                }
+            }
+
+            document.addEventListener("keydown", function(event) {
+                if (event.code === "Space") {
+                    player.speedY = -10;
+                }
+            });
+
+            canvas.addEventListener("touchstart", function() {
+                player.speedY = -10;
+            });
+
+            birdImage.onload = function() {
+                gameLoop();
+            };
+        });
+    </script>
+</body>
+</html>
